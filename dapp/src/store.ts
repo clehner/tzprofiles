@@ -52,6 +52,10 @@ export const loadBasicProfile = async ({
   if (url) {
     const res = await loadJsonBlob(url);
     if (!res.ok || res.status !== 200) {
+      alert.set({
+        message: `Failed in Basic Profile Fetch ${res.statusText}`,
+        variant: "error",
+      })
       throw new Error(`Failed in Basic Profile Fetch ${res.statusText}`);
     }
 
@@ -86,6 +90,10 @@ export const loadTwitterProfile = async ({
   if (url) {
     const res = await loadJsonBlob(url);
     if (!res.ok || res.status !== 200) {
+      alert.set({
+        message: `Failed in Basic Profile Fetch ${res.statusText}`,
+        variant: "error",
+      })
       throw new Error(`Failed in Basic Profile Fetch ${res.statusText}`);
     }
 
@@ -247,6 +255,10 @@ export const originate = async (): Promise<void> => {
   }
 
   if (claimsList.length < 1) {
+    alert.set({
+      message: 'No claim urls found',
+      variant: "error",
+    })
     throw new Error('No claim urls found');
   }
 
@@ -256,10 +268,18 @@ export const originate = async (): Promise<void> => {
 
 export const addClaims = async (claimsList: Array<Claim>): Promise<string> => {
   if (!localClient) {
+    alert.set({
+      message: 'No wallet detected',
+      variant: "error",
+    })
     throw new Error('No wallet detected');
   }
 
   if (!localContractAddress) {
+    alert.set({
+      message: 'No contractAddress detected',
+      variant: "error",
+    })
     throw new Error('No contractAddress detected');
   }
 
@@ -277,10 +297,18 @@ export const addClaims = async (claimsList: Array<Claim>): Promise<string> => {
 
 export const removeClaims = async (claimsList: Array<Claim>): Promise<string> => {
   if (!localClient) {
+    alert.set({
+      message: 'No smart contract client detected',
+      variant: "error",
+    })
     throw new Error('No smart contract client detected');
   }
 
   if (!localContractAddress) {
+    alert.set({
+      message: 'No contractAddress detected',
+      variant: "error",
+    })
     throw new Error('No contractAddress detected');
   }
 
@@ -308,10 +336,18 @@ function getVCType(vc: any): string {
     nextVC = JSON.parse(vc)
   }
   if (!nextVC || !nextVC?.type) {
+    alert.set({
+      message: 'Could not find property "type" in vc',
+      variant: "error",
+    })
     throw new Error('Could not find property "type" in vc');
   }
 
   if (!Array.isArray(nextVC.type) || nextVC.type.length < 1) {
+    alert.set({
+      message: 'VC "type" property must be an array',
+      variant: "error",
+    })
     throw new Error('VC "type" property must be an array');
   }
 
@@ -390,6 +426,10 @@ wallet.subscribe((wallet) => {
                     loadBasicProfile(nextClaims);
                     break;
                   default:
+                    alert.set({
+                      message: `Unknown VC Type: ${vcType}`,
+                      variant: "error",
+                    })
                     throw new Error(`Unknown VC Type: ${vcType}`)
                 }
 
@@ -397,10 +437,18 @@ wallet.subscribe((wallet) => {
               claimsStream.set(nextClaims);
             }
           } else {
+            alert.set({
+              message: 'No contract detected, starting new one',
+              variant: "info",
+            })
             console.warn('No contract detected, starting new one');
           }
         } catch (e) {
-          console.error(`store::load_contracts:: ${e}`);
+          alert.set({
+            message: `store::load_contracts:: ${JSON.stringify(e)}`,
+            variant: "error",
+          })
+          console.error(`store::load_contracts:: ${JSON.stringify(e)}`);
         } finally {
           loadingContracts.set(false);
         }
