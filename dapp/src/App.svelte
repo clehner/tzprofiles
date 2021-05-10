@@ -72,6 +72,8 @@
     TermsOfService,
     PrivacyPolicy,
     Deploy,
+    Search,
+    View 
   } from 'routes';
 
   //This avoids PurgeCSS from deleting classes from production build
@@ -115,5 +117,11 @@
   </Route>
   <Route path="deploy">
     <Deploy />
+  </Route>
+  <Route path="search">
+    <Search />
+  </Route>
+  <Route path="view">
+    <View />
   </Route>
 </Router>

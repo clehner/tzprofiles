@@ -509,3 +509,98 @@ export const initWallet: () => Promise<void> = async () => {
     throw e;
   }
 };
+
+// Viewer related params:
+// TODO: Organize
+// TODO: MAKE THE NETWORK RESONABLE
+export let claims: Writable<any> = writable({
+  BasicProfile: false,
+  TwitterProfile: false,
+});
+
+let localClaims;
+
+claims.subscribe((x) => (localClaims = x));
+
+export const search = async (wallet) => {
+  if (wallet) {
+    try {
+      let s = strNetwork === 'custom' ? 'sandboxnet' : strNetwork;
+
+      let bcdOpts: contractLib.BetterCallDevOpts = {
+        base: urlBetterCallDev,
+        network: s as contractLib.BetterCallDevNetworks,
+        version: 1 as contractLib.BetterCallDevVersions
+      };
+
+      let clientOpts: contractLib.TZProfilesClientOpts = {
+        betterCallDevConfig: bcdOpts,
+        keplerClient: localKepler,
+        hashContent: hashFunc,
+        nodeURL: urlNode,
+        signer: false,
+        validateType: async () => {}
+        // TODO: RESTORE
+        // validateType: async (c: contractLib.ClaimContent, t: contractLib.ClaimType): Promise<void> => {
+        //     // Validate VC
+        //     switch (t){
+        //       case "VerifiableCredential": {
+        //         let verifyResult = await localDIDKit.verifyCredential(c, '{}');
+        //         let verifyJSON = JSON.parse(verifyResult);
+        //         if (verifyJSON.errors.length > 0) throw new Error(verifyJSON.errors.join(", "));
+        //         break;
+        //       }
+        //       default: 
+        //         throw new Error(`Unknown ClaimType: ${t}`);
+        //     }
+        // }
+      }
+
+      let contractClient = new contractLib.TZProfilesClient(clientOpts);
+
+      let found = await contractClient.retrieve(wallet);
+      if (found) {
+        contractAddress.set(found.address);
+        // NOTE: We are not dealing with invalid claims in the UI
+        // TODO: Handle invalid claims
+        const resolvedClaims: any = await Promise.all(
+          found.valid.map((profile) =>
+            localKepler
+              .resolve(profile[0], false)
+              .then((r) => r.json())
+              .then((claim) => (Array.isArray(claim) ? claim[0] : claim))
+          )
+        );
+        resolvedClaims.forEach((claim) => {
+          claim.type.forEach((type) => {
+            switch (type) {
+              case 'TwitterVerification':
+                localClaims.TwitterProfile = claim;
+                break;
+              case 'BasicProfile':
+                localClaims.BasicProfile = claim;
+                break;
+              default:
+                break;
+            }
+          });
+        });
+        claims.set(localClaims);
+        return;
+      }
+    } catch (err) {
+      alert.set({
+        message: err.message || 'Network error',
+        variant: 'error',
+      });
+      console.error(err);
+      throw err;
+    }
+  }
+
+  alert.set({
+    message: `No contract found for ${wallet}`,
+    variant: 'error',
+  });
+  throw new Error(`No contract found for ${wallet}`);
+}

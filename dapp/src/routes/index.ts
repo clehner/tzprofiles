@@ -6,3 +6,6 @@ export { default as BasicProfile } from './BasicProfile.svelte';
 export { default as TermsOfService } from './TermsOfService.svelte';
 export { default as PrivacyPolicy } from './PrivacyPolicy.svelte';
 export { default as Deploy } from './Deploy.svelte';
+export { default as Search } from './Search.svelte';
+export { default as View } from './View.svelte';
+export { default as ViewProfile } from './ViewProfile.svelte';
