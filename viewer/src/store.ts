@@ -57,11 +57,14 @@ export const search = async (wallet) => {
         version: 1 as contractLib.BetterCallDevVersions
       };
 
+
+      let u = node === 'sandboxnet' ? 'http://localhost:8732' : `https://api.tez.ie/rpc/${node}`;
+
       let clientOpts: contractLib.TZProfilesClientOpts = {
         betterCallDevConfig: bcdOpts,
         keplerClient: localKepler,
         hashContent: hashFunc,
-        nodeURL: "undefined",
+        nodeURL: u,
         signer: false,
         validateType: async () => {}
         // TODO: RESTORE
