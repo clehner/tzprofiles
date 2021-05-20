@@ -3,6 +3,56 @@ import { alert } from 'src/store';
 import { signClaim } from 'src/utils';
 import { RequestSignPayloadInput, SigningType } from '@airgap/beacon-sdk';
 
+export const generateSignature = async (profile, userData, DIDKit) => {
+
+  const { alias, description, website, logo } = profile;
+  const did = `did:pkh:tz:${userData.account.address}`;
+  const credential = {
+    '@context': [
+      'https://www.w3.org/2018/credentials/v1',
+      {
+        alias: 'https://schema.org/name',
+        description: 'https://schema.org/description',
+        website: 'https://schema.org/url',
+        logo: 'https://schema.org/logo',
+        BasicProfile: 'https://tzprofiles.com/BasicProfile',
+      },
+    ],
+    id: 'urn:uuid:' + uuid(),
+    issuer: did,
+    issuanceDate: new Date().toISOString(),
+    type: ['VerifiableCredential', 'BasicProfile'],
+    credentialSubject: {
+      id: did,
+      alias,
+      description,
+      website,
+      logo,
+    },
+  };
+
+  let credentialString = JSON.stringify(credential);
+  const proofOptions = {
+    verificationMethod: did + '#TezosMethod2021',
+    proofPurpose: 'assertionMethod',
+  };
+
+  const publicKey = userData.account.publicKey;
+  const publicKeyJwkString = await DIDKit.JWKFromTezos(publicKey);
+  let prepStr = await DIDKit.prepareIssueCredential(
+    credentialString,
+    JSON.stringify(proofOptions),
+    publicKeyJwkString
+  );
+  const preparation = JSON.parse(prepStr);
+  const { signingInput } = preparation;
+  const micheline = signingInput && signingInput.micheline;
+  if (!micheline) {
+    throw new Error('Expected micheline signing input');
+  }
+  return { micheline, credentialString, prepStr };
+}
+
 export const signBasicProfile = async (
   userData,
   wallet,
@@ -11,51 +61,8 @@ export const signBasicProfile = async (
   profile
 ) => {
   try {
-    const { alias, description, website, logo } = profile;
-    const did = `did:pkh:tz:${userData.account.address}`;
-    const credential = {
-      '@context': [
-        'https://www.w3.org/2018/credentials/v1',
-        {
-          alias: 'https://schema.org/name',
-          description: 'https://schema.org/description',
-          website: 'https://schema.org/url',
-          logo: 'https://schema.org/logo',
-          BasicProfile: 'https://tzprofiles.com/BasicProfile',
-        },
-      ],
-      id: 'urn:uuid:' + uuid(),
-      issuer: did,
-      issuanceDate: new Date().toISOString(),
-      type: ['VerifiableCredential', 'BasicProfile'],
-      credentialSubject: {
-        id: did,
-        alias,
-        description,
-        website,
-        logo,
-      },
-    };
 
-    let credentialString = JSON.stringify(credential);
-    const proofOptions = {
-      verificationMethod: did + '#TezosMethod2021',
-      proofPurpose: 'assertionMethod',
-    };
-
-    const publicKey = userData.account.publicKey;
-    const publicKeyJwkString = await DIDKit.JWKFromTezos(publicKey);
-    let prepStr = await DIDKit.prepareIssueCredential(
-      credentialString,
-      JSON.stringify(proofOptions),
-      publicKeyJwkString
-    );
-    const preparation = JSON.parse(prepStr);
-    const { signingInput } = preparation;
-    const micheline = signingInput && signingInput.micheline;
-    if (!micheline) {
-      throw new Error('Expected micheline signing input');
-    }
+    const { micheline, credentialString, prepStr } = await generateSignature(profile, userData, DIDKit);
 
     const payload: RequestSignPayloadInput = {
       signingType: SigningType.MICHELINE,
@@ -91,7 +98,7 @@ export const signBasicProfile = async (
     return vcStr;
   } catch (e) {
     alert.set({
-      message: e,
+      message: e.message || JSON.stringify(e),
       variant: 'error',
     });
     throw e;

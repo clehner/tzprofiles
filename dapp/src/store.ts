@@ -1,6 +1,5 @@
 import { BeaconWallet } from '@taquito/beacon-wallet';
-import type { Writable } from 'svelte/store';
-import { writable } from 'svelte/store';
+import { Writable, writable } from 'svelte/store';
 import { TezosToolkit } from '@taquito/taquito';
 import { Tzip16Module } from '@taquito/tzip16';
 import NetworkType from 'enums/NetworkType';
@@ -463,7 +462,7 @@ wallet.subscribe((wallet) => {
           }
         } catch (e) {
           alert.set({
-            message: e.message,
+            message: e.message || JSON.stringify(e),
             variant: 'error',
           });
           console.error('store::load_contracts::', e);
