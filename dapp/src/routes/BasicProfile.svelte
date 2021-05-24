@@ -33,13 +33,6 @@
   let logo: string = '';
   let currentStep: number = 1;
 
-  let profile = {
-    alias,
-    description,
-    website,
-    logo,
-  };
-
   const next = () => (currentStep = currentStep + 1);
 </script>
 
@@ -56,17 +49,25 @@
         </a>
         <CopyButton
           class="h-6 w-6"
-          text={generateSignature(profile, $userData, $DIDKit).then(
-            ({ micheline }) => {
-              let str = JSON.stringify(
-                valueDecoder(
-                  Uint8ArrayConsumer.fromHexString(micheline.slice(2))
-                ).string
-              );
-              str = str.substring(1, str.length - 1);
-              return str;
-            }
-          )}
+          text={async () => {
+            let profile = {
+              alias,
+              description,
+              website,
+              logo,
+            };
+            return generateSignature(profile, $userData, $DIDKit).then(
+              ({ micheline }) => {
+                let str = JSON.stringify(
+                  valueDecoder(
+                    Uint8ArrayConsumer.fromHexString(micheline.slice(2))
+                  ).string
+                );
+                str = str.substring(1, str.length - 1);
+                return str;
+              }
+            );
+          }}
         />
       </div>
       <PrimaryButton
@@ -74,6 +75,13 @@
         class="mt-8 flex-grow"
         onClick={() => {
           lock = true;
+
+          let profile = {
+            alias,
+            description,
+            website,
+            logo,
+          };
           signBasicProfile($userData, $wallet, $networkStr, $DIDKit, profile)
             .then((vc) => {
               let nextClaimMap = verification;
