@@ -3,7 +3,7 @@
 import {InMemorySigner, importKey} from "@taquito/signer";
 import * as taquito from "@taquito/taquito";
 import * as tzip16 from "@taquito/tzip16";
-import { contract as contractCode } from "./contract";
+import {contract as contractCode} from "./contract";
 import axios from "axios";
 
 // Magic Number controlling how long to wait before confirming success.
@@ -310,9 +310,12 @@ export class ContractClient<Content, ContentType, Hash, Reference> {
 		try {
 			const contract = await this.tezos.contract.at(item.value, tzip16.tzip16);
 			const metadata = await contract.tzip16().getMetadata();
-			if (metadata.metadata.interfaces.includes("TZIP-023")) {
-				return true;
+			for (var i in metadata.metadata.interfaces) {
+				if (metadata.metadata.interfaces[i].includes("TZIP-024")) {
+					return true;
+				}
 			}
+			return false;
 		} catch (_) {
 			return false;
 		}
