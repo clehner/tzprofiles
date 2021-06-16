@@ -56,6 +56,14 @@
     retry = false;
     try {
       await originate();
+      const nextClaimStream = $claimsStream;
+      Object.values(nextClaimStream).forEach((claim) => {
+        if (claim.content) {
+          claim.onChain = true;
+          nextClaimStream[claim.type] = claim;
+        }
+      });
+      claimsStream.set(nextClaimStream);
       next();
       next();
     } catch (e) {
