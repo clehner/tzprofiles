@@ -64,16 +64,12 @@
     }
 
     try {
-      const did = `did:ethr:${account}`;
+      const did = `did:pkh:eth:${account}`;
 
       const credential = {
         '@context': [
           'https://www.w3.org/2018/credentials/v1',
-          {
-            sameAs: 'https://www.w3.org/TR/owl-ref/#sameAs-def',
-            wallet: 'https://tzprofiles.com/ethereumWallet',
-            EthereumControl: 'https://tzprofiles.com/EthereumControl',
-          },
+          'https://demo.spruceid.com/2021/ethereum-control-v1.jsonld',
         ],
         id: 'urn:uuid:' + uuid(),
         issuer: did,
@@ -86,11 +82,42 @@
       };
 
       const proofOptions = {
-        verificationMethod: did + '#Eip712Method2021',
+        verificationMethod: did + '#Recovery2020',
         proofPurpose: 'assertionMethod',
+        eip712Domain: {
+          primaryType: "VerifiableCredential",
+          domain: {
+            "name": "Tezos Profiles Verifiable Credential"
+          },
+          messageSchema: {
+            "EIP712Domain": [
+              { "name": "name", "type": "string" }
+            ],
+            "VerifiableCredential": [
+              { "name": "@context", "type": "string[]" },
+              { "name": "id", "type": "string" },
+              { "name": "type", "type": "string[]" },
+              { "name": "issuer", "type": "string" },
+              { "name": "issuanceDate", "type": "string" },
+              { "name": "credentialSubject", "type": "CredentialSubject" },
+              { "name": "proof", "type": "Proof" }
+            ],
+            "CredentialSubject": [
+              { "name": "wallet", "type": "string" },
+              { "name": "sameAs", "type": "string" },
+            ],
+            "Proof": [
+              { "name": "@context", "type": "string" },
+              { "name": "verificationMethod", "type": "string" },
+              { "name": "created", "type": "string" },
+              { "name": "proofPurpose", "type": "string" },
+              { "name": "type", "type": "string" }
+            ]
+          }
+        }
       };
 
-      const keyType = { kty: 'EC', crv: 'secp256k1', alg: 'ES256K-R' };
+      const keyType = { kty: 'EC', crv: 'secp256k1', alg: 'ES256K-R', "key_ops": ["signTypedData"] };
       const credStr = JSON.stringify(credential);
 
       const prepStr = await prepareIssueCredential(
